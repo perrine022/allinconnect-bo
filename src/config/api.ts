@@ -4,9 +4,12 @@
  * Cette configuration définit l'URL de base de l'API backend.
  * Elle peut être surchargée via la variable d'environnement NEXT_PUBLIC_API_URL.
  * 
- * Par défaut, l'API est configurée pour pointer vers localhost:8080
+ * Production: https://allinconnect-back-1.onrender.com
+ * Local (commenté): http://localhost:8080
  */
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://allinconnect-back-1.onrender.com";
+// Pour le développement local, décommenter la ligne ci-dessous et commenter celle du dessus:
+// export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 /**
  * URL complète pour les endpoints d'authentification
