@@ -8,7 +8,7 @@ import { usersService } from '@/services/usersApi';
 import { offersService } from '@/services/offersApi';
 import { walletService, WalletTransaction, WalletRequest } from '@/services/walletApi';
 import { subscriptionsService } from '@/services/subscriptionsApi';
-import { User, Offer, SubscriptionPlan, Payment, UpdateProfileDto } from '@/types';
+import { User, Offer, SubscriptionPlan, Payment, UpdateProfileDto, PlanCategory, PlanDuration } from '@/types';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -288,8 +288,8 @@ export default function DashboardPage() {
       title: '',
       description: '',
       price: 0,
-      category: 'INDIVIDUAL',
-      duration: 'MONTHLY',
+      category: PlanCategory.INDIVIDUAL,
+      duration: PlanDuration.MONTHLY,
       referralReward: 0,
     });
   };
