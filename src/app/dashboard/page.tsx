@@ -53,6 +53,11 @@ export default function DashboardPage() {
   const [detailedStats, setDetailedStats] = useState<DetailedStatistics | null>(null);
   const [detailedStatsLoading, setDetailedStatsLoading] = useState(false);
   const [detailedStatsError, setDetailedStatsError] = useState<string | null>(null);
+  const [showReferralsModal, setShowReferralsModal] = useState(false);
+  const [selectedUserForReferrals, setSelectedUserForReferrals] = useState<User | null>(null);
+  const [referrals, setReferrals] = useState<User[]>([]);
+  const [referralsLoading, setReferralsLoading] = useState(false);
+  const [referralsError, setReferralsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -211,6 +216,30 @@ export default function DashboardPage() {
       loadUsers();
     } else if (activeTab === 'offres') {
       loadOffers();
+    }
+  };
+
+  const loadReferrals = async (user: User) => {
+    try {
+      setReferralsLoading(true);
+      setReferralsError(null);
+      setSelectedUserForReferrals(user);
+      const referralsData = await usersService.getReferrals(user.id);
+      setReferrals(referralsData);
+      setShowReferralsModal(true);
+    } catch (err: any) {
+      console.error('Erreur lors du chargement des filleuls:', err);
+      setReferralsError(err.message || 'Erreur lors du chargement des filleuls');
+      setShowReferralsModal(true);
+    } finally {
+      setReferralsLoading(false);
+    }
+  };
+
+  const handleReferralCodeClick = (e: React.MouseEvent, user: User) => {
+    e.stopPropagation();
+    if (user.referralCode) {
+      loadReferrals(user);
     }
   };
 
@@ -931,7 +960,13 @@ export default function DashboardPage() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.website || 'N/A'}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.instagram || 'N/A'}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.openingHours || 'N/A'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.referralCode || 'N/A'}</td>
+                            <td 
+                              className={`px-6 py-4 whitespace-nowrap text-sm ${user.referralCode ? 'text-red-600 hover:text-red-800 cursor-pointer underline' : 'text-gray-900'}`}
+                              onClick={(e) => user.referralCode && handleReferralCodeClick(e, user)}
+                              title={user.referralCode ? 'Cliquer pour voir les filleuls' : ''}
+                            >
+                              {user.referralCode || 'N/A'}
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.walletBalance ? formatCurrency(user.walletBalance) : 'N/A'}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {user.hasConnectedBefore !== undefined ? (user.hasConnectedBefore ? 'Oui' : 'Non') : 'N/A'}
@@ -2073,6 +2108,92 @@ export default function DashboardPage() {
                     {saving ? 'Enregistrement...' : 'Enregistrer'}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Referrals Modal */}
+        {showReferralsModal && (
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="bg-red-600 text-white px-6 py-4 flex items-center justify-between rounded-t-lg">
+                <h2 className="text-lg font-semibold">
+                  Filleuls de {selectedUserForReferrals ? `${selectedUserForReferrals.firstName} ${selectedUserForReferrals.lastName}` : ''}
+                  {selectedUserForReferrals?.referralCode && (
+                    <span className="text-sm font-normal ml-2">(Code: {selectedUserForReferrals.referralCode})</span>
+                  )}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowReferralsModal(false);
+                    setSelectedUserForReferrals(null);
+                    setReferrals([]);
+                    setReferralsError(null);
+                  }}
+                  className="text-white hover:text-gray-200 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6">
+                {referralsLoading ? (
+                  <div className="text-center py-12">
+                    <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600">Chargement des filleuls...</p>
+                  </div>
+                ) : referralsError ? (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                    <p className="text-red-600">{referralsError}</p>
+                    <button
+                      onClick={() => selectedUserForReferrals && loadReferrals(selectedUserForReferrals)}
+                      className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Réessayer
+                    </button>
+                  </div>
+                ) : referrals.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Aucun filleul trouvé pour cet utilisateur</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prénom</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ville</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date inscription</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {referrals.map((referral) => (
+                          <tr 
+                            key={referral.id} 
+                            className="hover:bg-gray-50 cursor-pointer"
+                            onClick={() => {
+                              setShowReferralsModal(false);
+                              handleEditUser(referral);
+                            }}
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.email}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.firstName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.lastName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.city || 'N/A'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.userType || 'N/A'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDateString(referral.subscriptionDate)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           </div>

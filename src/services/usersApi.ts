@@ -167,4 +167,25 @@ export const usersService = {
       }
     }
   },
+
+  // Récupérer les filleuls d'un utilisateur (par code de parrainage)
+  getReferrals: async (userId: number): Promise<User[]> => {
+    try {
+      const response = await api.get<User[]>(`/v1/users/${userId}/referrals`);
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ [USERS API] Erreur lors de la récupération des filleuls:", error);
+      if (error.response) {
+        throw new Error(
+          error.response.data?.message || 
+          error.response.data?.error || 
+          `Erreur ${error.response.status}: ${error.response.statusText}`
+        );
+      } else if (error.request) {
+        throw new Error("Aucune réponse du serveur. Vérifiez votre connexion.");
+      } else {
+        throw new Error(`Erreur de configuration: ${error.message}`);
+      }
+    }
+  },
 };
